@@ -4,43 +4,63 @@ import { apiRequest } from '@/lib/queryClient';
 export const useArtifact = (id?: string) => {
   const queryClient = useQueryClient();
   
+  // Fetch single artifact
   const artifactQuery = useQuery({
-    queryKey: id ? ['/api/artifacts', id] : null,
-    enabled: !!id,
-  });
-
-  const uploadArtifact = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const res = await apiRequest('POST', '/api/artifacts', formData);
-      await res.json();
+    queryKey: ['/api/artifacts', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const res = await apiRequest('GET', `/api/artifacts/${id}`);
       if (!res.ok) {
-        throw new Error('Failed to upload artifact');
+        if (res.status === 404) return null;
+        throw new Error('Failed to fetch artifact');
       }
       return res.json();
     },
+    enabled: !!id,
+  });
+  
+  // Fetch all artifacts
+  const artifactsQuery = useQuery({
+    queryKey: ['/api/artifacts'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/artifacts');
+      if (!res.ok) throw new Error('Failed to fetch artifacts');
+      return res.json();
+    },
+  });
+  
+  // Upload artifact mutation
+  const uploadArtifact = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const res = await apiRequest('POST', '/api/artifacts', formData);
+      if (!res.ok) throw new Error('Failed to upload artifact');
+      return res.json();
+    },
     onSuccess: () => {
+      // Invalidate artifacts query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['/api/artifacts'] });
     },
   });
   
+  // Verify artifact mutation
   const verifyArtifact = useMutation({
-    mutationFn: async ({ id, verificationHash, metadataHash }: { id: number, verificationHash: string, metadataHash: string }) => {
-      const res = await apiRequest('POST', `/api/artifacts/${id}/verify`, { verificationHash, metadataHash });
-      if (!res.ok) {
-        throw new Error('Failed to verify artifact');
-      }
+    mutationFn: async ({ id, verificationData }: { id: number, verificationData: any }) => {
+      const res = await apiRequest('POST', `/api/artifacts/${id}/verify`, verificationData);
+      if (!res.ok) throw new Error('Failed to verify artifact');
       return res.json();
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/artifacts', variables.id.toString()] });
+      // Invalidate both the artifacts list and the specific artifact
       queryClient.invalidateQueries({ queryKey: ['/api/artifacts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/artifacts', variables.id.toString()] });
     },
   });
-
+  
   return {
     artifact: artifactQuery.data,
-    isLoading: artifactQuery.isLoading,
-    error: artifactQuery.error,
+    artifacts: artifactsQuery.data,
+    isLoading: artifactQuery.isLoading || artifactsQuery.isLoading,
+    isError: artifactQuery.isError || artifactsQuery.isError,
     uploadArtifact,
     verifyArtifact,
   };
