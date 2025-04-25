@@ -1,0 +1,218 @@
+import { artifacts, users, subscriptions, type Artifact, type User, type Subscription, type InsertArtifact, type InsertUser, type InsertSubscription } from "@shared/schema";
+
+export interface IStorage {
+  // User methods
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUserAuthentication(id: number, isAuthenticated: boolean): Promise<User | undefined>;
+  updateUserSubscription(id: number, hasSubscription: boolean, expiryDate?: Date): Promise<User | undefined>;
+  
+  // Artifact methods
+  getArtifact(id: number): Promise<Artifact | undefined>;
+  getArtifacts(): Promise<Artifact[]>;
+  createArtifact(artifact: InsertArtifact): Promise<Artifact>;
+  verifyArtifact(id: number, verificationHash: string, metadataHash: string): Promise<Artifact | undefined>;
+  
+  // Subscription methods
+  createSubscription(subscription: InsertSubscription): Promise<Subscription>;
+  getActiveSubscriptionByUserId(userId: number): Promise<Subscription | undefined>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User>;
+  private artifacts: Map<number, Artifact>;
+  private subscriptions: Map<number, Subscription>;
+  private userIdCounter: number;
+  private artifactIdCounter: number;
+  private subscriptionIdCounter: number;
+  
+  constructor() {
+    this.users = new Map();
+    this.artifacts = new Map();
+    this.subscriptions = new Map();
+    this.userIdCounter = 1;
+    this.artifactIdCounter = 1;
+    this.subscriptionIdCounter = 1;
+    
+    // Buat user demo
+    this.users.set(1, {
+      id: 1,
+      username: 'demo_user',
+      password: 'password',
+      isAuthenticated: false,
+      hasSubscription: false,
+      createdAt: new Date(),
+    });
+    
+    // Buat artefak demo
+    this.artifacts.set(1, {
+      id: 1,
+      name: 'Batik Megamendung',
+      description: 'Motif batik klasik Cirebon yang menggambarkan bentuk awan dan melambangkan pembawa hujan.',
+      type: 'batik',
+      origin: 'Cirebon',
+      price: 2500000,
+      imageUrl: '/assets/batik-megamendung.jpg',
+      ownerId: 1,
+      verified: true,
+      verificationHash: '8a7b4c6d2e5f3a1b8c7d4e5f6a2b3c4d5e6f7a8b9c1d2e3f4a5b6c7d8e9f1a2b',
+      metadataHash: '3e4f5a6b7c8d9e1f2a3b4c5d6e7f8a9b1c2d3e4f5a6b7c8d9e1f2a3b4c5d6e7f',
+      createdAt: new Date(),
+    });
+    
+    this.artifacts.set(2, {
+      id: 2,
+      name: 'Tenun Ikat Sumba',
+      description: 'Kain tenun tradisional Sumba dengan pola yang menggambarkan simbol-simbol budaya lokal.',
+      type: 'tenun',
+      origin: 'Sumba',
+      price: 3500000,
+      imageUrl: '/assets/tenun-ikat-sumba.jpg',
+      ownerId: 1,
+      verified: false,
+      createdAt: new Date(),
+    });
+    
+    this.artifacts.set(3, {
+      id: 3,
+      name: 'Batik Kawung',
+      description: 'Motif batik klasik berbentuk lingkaran yang melambangkan empat arah mata angin.',
+      type: 'batik',
+      origin: 'Yogyakarta',
+      price: 1800000,
+      imageUrl: '/assets/batik-kawung.jpg',
+      ownerId: 1,
+      verified: true,
+      verificationHash: '7c8d9e1f2a3b4c5d6e7f8a9b1c2d3e4f5a6b7c8d9e1f2a3b4c5d6e7f8a9b1c2d',
+      metadataHash: '2d3e4f5a6b7c8d9e1f2a3b4c5d6e7f8a9b1c2d3e4f5a6b7c8d9e1f2a3b4c5d6',
+      createdAt: new Date(),
+    });
+  }
+  
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+  
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = ++this.userIdCounter;
+    
+    const user: User = { 
+      id, 
+      ...insertUser,
+      isAuthenticated: false,
+      hasSubscription: false,
+      createdAt: new Date(),
+    };
+    
+    this.users.set(id, user);
+    return user;
+  }
+  
+  async updateUserAuthentication(id: number, isAuthenticated: boolean): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { ...user, isAuthenticated };
+    this.users.set(id, updatedUser);
+    
+    return updatedUser;
+  }
+  
+  async updateUserSubscription(id: number, hasSubscription: boolean, expiryDate?: Date): Promise<User | undefined> {
+    const user = await this.getUser(id);
+    if (!user) return undefined;
+    
+    const updatedUser = { 
+      ...user, 
+      hasSubscription,
+      subscriptionExpiryDate: expiryDate
+    };
+    
+    this.users.set(id, updatedUser);
+    
+    return updatedUser;
+  }
+  
+  // Artifact methods
+  async getArtifact(id: number): Promise<Artifact | undefined> {
+    return this.artifacts.get(id);
+  }
+  
+  async getArtifacts(): Promise<Artifact[]> {
+    return Array.from(this.artifacts.values());
+  }
+  
+  async createArtifact(insertArtifact: InsertArtifact): Promise<Artifact> {
+    const id = ++this.artifactIdCounter;
+    
+    const artifact: Artifact = {
+      id,
+      ...insertArtifact,
+      verified: false,
+      createdAt: new Date(),
+    };
+    
+    this.artifacts.set(id, artifact);
+    return artifact;
+  }
+  
+  async verifyArtifact(id: number, verificationHash: string, metadataHash: string): Promise<Artifact | undefined> {
+    const artifact = await this.getArtifact(id);
+    if (!artifact) return undefined;
+    
+    const updatedArtifact = {
+      ...artifact,
+      verified: true,
+      verificationHash,
+      metadataHash,
+    };
+    
+    this.artifacts.set(id, updatedArtifact);
+    return updatedArtifact;
+  }
+  
+  // Subscription methods
+  async createSubscription(insertSubscription: InsertSubscription): Promise<Subscription> {
+    const id = ++this.subscriptionIdCounter;
+    
+    const subscription: Subscription = {
+      id,
+      ...insertSubscription,
+      active: true,
+      createdAt: new Date(),
+    };
+    
+    this.subscriptions.set(id, subscription);
+    
+    // Update user subscription status
+    await this.updateUserSubscription(
+      insertSubscription.userId,
+      true,
+      insertSubscription.endDate
+    );
+    
+    return subscription;
+  }
+  
+  async getActiveSubscriptionByUserId(userId: number): Promise<Subscription | undefined> {
+    for (const subscription of this.subscriptions.values()) {
+      if (subscription.userId === userId && subscription.active) {
+        return subscription;
+      }
+    }
+    return undefined;
+  }
+}
+
+export const storage = new MemStorage();
