@@ -3,9 +3,10 @@
  */
 export const loadMetaverseViewer = () => {
   return new Promise<void>((resolve) => {
+    console.log('Loading metaverse viewer...');
     // Simulate loading delay
     setTimeout(() => {
-      console.log('Metaverse viewer loaded');
+      console.log('Metaverse viewer loaded successfully');
       resolve();
     }, 1500);
   });
@@ -15,34 +16,26 @@ export const loadMetaverseViewer = () => {
  * Simulates rendering a 3D model of an artifact
  */
 export const renderArtifact3D = (artifactId: number) => {
-  console.log(`Rendering 3D model for artifact: ${artifactId}`);
-  
-  // In a real implementation, this would:
-  // 1. Load a 3D model using Three.js
-  // 2. Set up a scene, camera, and renderer
-  // 3. Add lighting and controls
-  // 4. Render the model in a canvas element
-  
-  return {
-    success: true,
-    message: 'Artifact rendered in 3D view'
-  };
+  return new Promise<void>((resolve) => {
+    console.log(`Rendering 3D model for artifact ID: ${artifactId}`);
+    // Simulate rendering process
+    setTimeout(() => {
+      console.log('3D model rendered successfully');
+      resolve();
+    }, 2000);
+  });
 };
 
 /**
  * Simulates launching AR view for an artifact
  */
 export const launchARView = (artifactId: number) => {
-  console.log(`Launching AR view for artifact: ${artifactId}`);
-  
-  // In a real implementation, this would:
-  // 1. Use WebXR or a similar API to create an AR experience
-  // 2. Check device capability for AR
-  // 3. Load the 3D model of the artifact
-  // 4. Place it in the user's environment
-  
-  return {
-    success: true,
-    message: 'AR view launched successfully'
-  };
+  return new Promise<void>((resolve) => {
+    console.log(`Launching AR view for artifact ID: ${artifactId}`);
+    // Simulate AR launch
+    setTimeout(() => {
+      console.log('AR view launched successfully');
+      resolve();
+    }, 1000);
+  });
 };
