@@ -2,61 +2,56 @@ import { QueryClient } from '@tanstack/react-query';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const errorText = await res.text();
-    let errorJson: any = null;
-    try {
-      errorJson = JSON.parse(errorText);
-    } catch {}
-    throw new Error(errorJson?.message || errorText || res.statusText);
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const error = await res.json();
+      throw new Error(error.message || 'Unknown error');
+    }
+    throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
   }
 }
 
 export async function apiRequest(
   method: string,
-  url: string,
-  body?: unknown
+  path: string,
+  body?: any,
+  headers?: HeadersInit
 ) {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
   const options: RequestInit = {
     method,
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
     credentials: 'include',
   };
 
-  if (body !== undefined) {
-    if (body instanceof FormData) {
-      options.body = body;
-      delete (options.headers as any)['Content-Type'];
-    } else {
-      options.body = JSON.stringify(body);
-    }
+  if (body && !(body instanceof FormData)) {
+    options.body = JSON.stringify(body);
+  } else if (body) {
+    options.body = body;
+    // Remove Content-Type header so browser can set it with boundary for FormData
+    delete (options.headers as any)['Content-Type'];
   }
 
-  const res = await fetch(url, options);
-  return res;
+  return fetch(path, options);
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
-}) => (context: { queryKey: [string, ...unknown[]] }) => Promise<T> = (
-  options
-) => async (context) => {
-  const [url] = context.queryKey as [string];
+}) => (context: { queryKey: unknown[] }) => Promise<T | null> = (options) => async (context) => {
+  const [path] = context.queryKey as [string, ...unknown[]];
   
-  const res = await apiRequest('GET', url);
-
+  const res = await apiRequest('GET', path as string);
+  
   if (res.status === 401) {
-    if (options.on401 === "returnNull") {
-      return null as any;
-    } else {
-      await throwIfResNotOk(res);
+    if (options.on401 === 'throw') {
+      throw new Error('Unauthorized');
     }
+    return null;
   }
-
+  
   await throwIfResNotOk(res);
   return await res.json();
 };
@@ -64,9 +59,9 @@ export const getQueryFn: <T>(options: {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "returnNull" }),
+      queryFn: getQueryFn<unknown>({ on401: 'returnNull' }),
+      staleTime: 1000 * 60 * 5, // 5 minutes
       retry: false,
-      refetchOnWindowFocus: false,
     },
   },
 });
