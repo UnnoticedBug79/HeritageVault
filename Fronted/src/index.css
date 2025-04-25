@@ -1,111 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 186 100% 50%;
-    --primary-foreground: 222 47% 11%;
- 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 186 100% 50%;
- 
-    --radius: 0.5rem;
-  }
- 
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 186 100% 50%;
-    --primary-foreground: 222 47% 11%;
- 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 186 100% 50%;
-  }
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 222 47% 7%;
+  --card-foreground: 0 0% 98%;
+  --border: 186 100% 48%;
+  --input: 240 3.7% 15.9%;
+  --primary: 186 100% 48%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 186 100% 48%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 186 100% 48%;
+  --radius: 0.5rem;
+  
+  /* Custom icon styles */
+  --icon-glow: 0 0 10px rgba(0, 229, 255, 0.5), 0 0 20px rgba(0, 229, 255, 0.3);
+  
+  /* Chart colors */
+  --chart-1: 240 5.9% 10%;
+  --chart-2: 240 5.9% 10%;
+  --chart-3: 240 5.9% 10%;
+  --chart-4: 240 5.9% 10%;
+  --chart-5: 240 5.9% 10%;
+  
+  /* Sidebar colors */
+  --sidebar-background: 240 10% 3.9%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-primary: 186 100% 48%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 186 100% 48%;
+  --sidebar-accent-foreground: 0 0% 98%;
+  --sidebar-border: 186 100% 48%;
+  --sidebar-ring: 186 100% 48%;
 }
- 
+
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
   }
 }
 
-/* Cyber/Neon Styling */
-.neon-text {
-  color: #00e5ff;
-  text-shadow: 0 0 5px rgba(0, 229, 255, 0.5), 0 0 15px rgba(0, 229, 255, 0.3);
-}
-
-.header-title {
-  color: #00e5ff;
-  text-shadow: 0 0 5px rgba(0, 229, 255, 0.5), 0 0 15px rgba(0, 229, 255, 0.3);
-  letter-spacing: 1px;
-}
-
-.neon-border {
-  border: 1px solid rgba(0, 229, 255, 0.3);
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-}
-
-.drop-shadow-glow {
-  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.5));
-}
-
-.gradient-text {
-  background: linear-gradient(to right, #00e5ff, #33ccff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
-}
-
-/* Animation Keyframes */
 @keyframes pulse-ring {
   0% {
     transform: translate(-50%, -50%) scale(0.8);
@@ -161,38 +117,183 @@
   }
 }
 
-@keyframes scan {
-  0% {
-    transform: translateX(-100%);
+@layer components {
+  .drop-shadow-glow {
+    filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.7));
   }
-  100% {
-    transform: translateX(100%);
+  
+  .cyber-glitch-text {
+    position: relative;
+    display: inline-block;
   }
-}
-
-/* Utility classes */
-.animate-spin-slow {
-  animation: spin 8s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
+  
+  .glitch-anim {
+    animation: glitch 500ms infinite;
   }
-  to {
-    transform: rotate(360deg);
+  .neon-border {
+    @apply border border-primary rounded-lg shadow-[0_0_5px_#02e7f5,0_0_10px_rgba(2,231,245,0.3)];
   }
-}
-
-.text-glow {
-  text-shadow: 0 0 5px rgba(0, 229, 255, 0.5), 0 0 15px rgba(0, 229, 255, 0.3);
-}
-
-.border-glow {
-  box-shadow: 0 0 5px rgba(0, 229, 255, 0.5), 0 0 15px rgba(0, 229, 255, 0.3);
-  border-color: #00e5ff;
-}
-
-.animate-scan {
-  animation: scan 2s linear infinite;
+  
+  .neon-text {
+    @apply text-primary drop-shadow-[0_0_5px_rgba(2,231,245,0.7)];
+  }
+  
+  .feature-card {
+    @apply transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-[0_0_8px_#02e7f5,0_0_15px_rgba(2,231,245,0.5)];
+  }
+  
+  .metaverse-btn {
+    @apply relative overflow-hidden transition-all duration-300 ease-in-out hover:shadow-[0_0_8px_#02e7f5,0_0_15px_rgba(2,231,245,0.5)];
+  }
+  
+  .pulse-effect {
+    animation: pulse 2s infinite;
+  }
+  
+  /* Custom animations for loading screens */
+  @keyframes ping-slow {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes spin-slow {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes reverse-spin {
+    to {
+      transform: rotate(-360deg);
+    }
+  }
+  
+  @keyframes float-slow {
+    0% {
+      transform: perspective(1000px) rotateX(10deg) rotateY(45deg) translateY(0px);
+    }
+    50% {
+      transform: perspective(1000px) rotateX(15deg) rotateY(35deg) translateY(-10px);
+    }
+    100% {
+      transform: perspective(1000px) rotateX(10deg) rotateY(45deg) translateY(0px);
+    }
+  }
+  
+  @keyframes float-particle {
+    0% {
+      transform: translateY(0px) scale(1);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateY(-15px) scale(1.5);
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(-30px) scale(0.5);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ping-slow {
+    animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 10s linear infinite;
+  }
+  
+  .animate-reverse-spin {
+    animation: reverse-spin 7s linear infinite;
+  }
+  
+  .animate-float-slow {
+    animation: float-slow 4s ease-in-out infinite;
+  }
+  
+  .animate-float-particle {
+    animation: float-particle 4s ease-out infinite;
+  }
+  
+  /* Gaya tambahan untuk dialog neon */
+  .neon-dialog-backdrop {
+    @apply bg-black/60 backdrop-blur-sm;
+  }
+  
+  .neon-dialog-container {
+    @apply bg-black border border-primary/50 rounded-lg shadow-lg shadow-primary/20 overflow-hidden;
+  }
+  
+  .neon-dialog-header {
+    @apply p-4 border-b border-primary/30 bg-gradient-to-r from-background to-background/80;
+  }
+  
+  .neon-dialog-content {
+    @apply p-5 bg-background/90;
+  }
+  
+  .neon-dialog-footer {
+    @apply flex justify-end space-x-3 p-4 bg-background border-t border-primary/20;
+  }
+  
+  .neon-button-cancel {
+    @apply px-4 py-2 bg-transparent border border-primary/30 text-primary rounded hover:bg-primary/10 transition-colors text-sm font-medium;
+  }
+  
+  .neon-button-confirm {
+    @apply px-4 py-2 bg-primary text-black rounded hover:bg-primary/90 transition-colors shadow-[0_0_10px_rgba(0,229,255,0.5)] text-sm font-medium;
+  }
+  
+  /* Pastikan judul header tidak terpotong */
+  .header-title {
+    text-shadow: 0 0 15px rgba(0, 229, 255, 0.5), 0 0 30px rgba(0, 229, 255, 0.3);
+    display: inline-block;
+    word-break: keep-all;
+    white-space: nowrap;
+    width: 100%;
+    text-align: center;
+    letter-spacing: 0.1em;
+    padding-left: 0.1em; /* Sedikit padding di kiri untuk menyeimbangkan */
+  }
+  
+  @media (max-width: 400px) {
+    .header-title {
+      font-size: 2.25rem;
+      letter-spacing: 0.05em;
+    }
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+  }
+  
+  /* Styling untuk ikon futuristik */
+  .feature-card svg {
+    filter: drop-shadow(0 0 3px rgba(0, 229, 255, 0.5));
+    transition: all 0.3s ease;
+  }
+  
+  .feature-card:hover svg {
+    filter: drop-shadow(0 0 5px rgba(0, 229, 255, 0.7));
+    transform: scale(1.05);
+  }
+  
+  /* Responsif untuk ukuran layar yang berbeda */
+  @media (max-width: 640px) {
+    .feature-card svg {
+      width: 48px;
+      height: 48px;
+    }
+  }
 }
