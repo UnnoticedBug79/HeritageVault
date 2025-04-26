@@ -1,166 +1,354 @@
-import Principal "mo:base/Principal";
-import Option "mo:base/Option";
-import HashMap "mo:base/HashMap";
-import Nat "mo:base/Nat";
-import Iter "mo:base/Iter";
 import Array "mo:base/Array";
+import Buffer "mo:base/Buffer";
+import Debug "mo:base/Debug";
+import Error "mo:base/Error";
+import HashMap "mo:base/HashMap";
+import Hash "mo:base/Hash";
+import Int "mo:base/Int";
+import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
+import Option "mo:base/Option";
+import Principal "mo:base/Principal";
+import Result "mo:base/Result";
 import Text "mo:base/Text";
+import Time "mo:base/Time";
+
 import Types "./types";
 import Verification "./verification";
 import Token "./token";
 
-actor {
-  // Types
+actor HeritageVault {
+  
+  // Type aliases for readability
   type User = Types.User;
   type Artifact = Types.Artifact;
-  type CreateArtifactRequest = Types.CreateArtifactRequest;
-  type VerificationResult = Types.VerificationResult;
-
-  // Storage
-  private stable var nextArtifactId : Nat = 1;
+  type ArtifactMetadata = Types.ArtifactMetadata;
+  type SubscriptionPlan = Types.SubscriptionPlan;
+  type Subscription = Types.Subscription;
+  type NFTMetadata = Types.NFTMetadata;
+  type Stats = Types.Stats;
+  
+  // Data structures
   private stable var nextUserId : Nat = 1;
+  private stable var nextArtifactId : Nat = 1;
+  private stable var nextSubscriptionId : Nat = 1;
+  private stable var nextTokenId : Nat = 1;
   
-  private let artifacts = HashMap.HashMap<Nat, Artifact>(0, Nat.equal, Text.hash);
-  private let users = HashMap.HashMap<Principal, User>(0, Principal.equal, Principal.hash);
+  private var users = HashMap.HashMap<Principal, User>(10, Principal.equal, Principal.hash);
+  private var artifacts = HashMap.HashMap<Nat, Artifact>(10, Nat.equal, Hash.hash);
+  private var subscriptions = HashMap.HashMap<Principal, Subscription>(10, Principal.equal, Principal.hash);
+  private var tokens = Token.init(); // NFT token registry
   
-  // User functions
-  public shared(msg) func createUser(username : Text) : async Nat {
+  // Stats for dashboard
+  private stable var stats : Stats = {
+    totalArtifacts = 0;
+    verifiedArtifacts = 0;
+    totalUsers = 0;
+    totalSubscriptions = 0;
+  };
+  
+  // ========== USER MANAGEMENT ==========
+  
+  // Get or create a user profile
+  public shared(msg) func getOrCreateUser() : async User {
     let caller = msg.caller;
     
-    // Check if user already exists
     switch (users.get(caller)) {
-      case (?existingUser) {
-        return existingUser.id;
+      case (?user) {
+        return user;
       };
-      case null {
-        let id = nextUserId;
+      case (null) {
         let newUser : User = {
-          id = id;
+          id = nextUserId;
           principal = caller;
-          username = username;
-          createdAt = Nat64.fromNat(Int.abs(Time.now()));
+          username = Option.get(Principal.toText(caller), "anonymous");
+          email = null;
+          artifacts = [];
+          hasSubscription = false;
+          subscriptionExpiry = null;
+          createdAt = Time.now();
         };
         
         users.put(caller, newUser);
         nextUserId += 1;
-        return id;
-      };
-    };
-  };
-  
-  public shared query(msg) func getMyUser() : async ?User {
-    return users.get(msg.caller);
-  };
-  
-  // Artifact functions
-  public shared(msg) func createArtifact(request : CreateArtifactRequest) : async Nat {
-    // Get caller's user or create one
-    let userId = await createUser(Option.get(request.creatorUsername, "anonymous"));
-    
-    let artifactId = nextArtifactId;
-    
-    // Generate verification hash for the artifact content
-    let verificationHash = Verification.generateHashForArtifact(request.name, request.description, request.origin);
-    
-    // Generate metadata hash for additional properties
-    let metadataHash = Verification.generateHashForMetadata(request.artistName, request.creationDate, request.category);
-    
-    let newArtifact : Artifact = {
-      id = artifactId;
-      name = request.name;
-      description = request.description;
-      origin = request.origin;
-      creatorId = userId;
-      creatorPrincipal = msg.caller;
-      artifactType = request.artifactType;
-      imageUrl = request.imageUrl;
-      verified = false;
-      tokenId = null;
-      verificationHash = verificationHash;
-      metadataHash = metadataHash;
-      createdAt = Nat64.fromNat(Int.abs(Time.now()));
-    };
-    
-    artifacts.put(artifactId, newArtifact);
-    nextArtifactId += 1;
-    
-    return artifactId;
-  };
-  
-  public query func getArtifact(id : Nat) : async ?Artifact {
-    return artifacts.get(id);
-  };
-  
-  public query func getAllArtifacts() : async [Artifact] {
-    return Iter.toArray(artifacts.vals());
-  };
-  
-  // Verification functions
-  public shared(msg) func verifyArtifact(id : Nat) : async VerificationResult {
-    switch (artifacts.get(id)) {
-      case null {
-        return {
-          success = false;
-          message = "Artifact not found";
-          artifact = null;
-        };
-      };
-      case (?artifact) {
-        // Perform verification checks
-        let contentVerified = Verification.verifyContent(
-          artifact.name, 
-          artifact.description, 
-          artifact.origin, 
-          artifact.verificationHash
-        );
+        stats.totalUsers += 1;
         
-        if (not contentVerified) {
-          return {
-            success = false;
-            message = "Content verification failed. Artifact may have been modified.";
-            artifact = null;
+        return newUser;
+      };
+    };
+  };
+  
+  // Get the current user's profile
+  public shared(msg) func getUser() : async ?User {
+    let caller = msg.caller;
+    users.get(caller);
+  };
+  
+  // Update user profile
+  public shared(msg) func updateUser(username : ?Text, email : ?Text) : async Result.Result<User, Text> {
+    let caller = msg.caller;
+    
+    switch (users.get(caller)) {
+      case (?user) {
+        let updatedUser : User = {
+          id = user.id;
+          principal = user.principal;
+          username = Option.get(username, user.username);
+          email = Option.get(email, user.email);
+          artifacts = user.artifacts;
+          hasSubscription = user.hasSubscription;
+          subscriptionExpiry = user.subscriptionExpiry;
+          createdAt = user.createdAt;
+        };
+        
+        users.put(caller, updatedUser);
+        #ok(updatedUser);
+      };
+      case (null) {
+        #err("User not found");
+      };
+    };
+  };
+  
+  // ========== ARTIFACT MANAGEMENT ==========
+  
+  // Create a new artifact
+  public shared(msg) func createArtifact(
+    name : Text,
+    description : Text,
+    artifactType : Types.ArtifactType,
+    ipfsUrl : Text,
+    metadata : ArtifactMetadata
+  ) : async Result.Result<Artifact, Text> {
+    let caller = msg.caller;
+    
+    switch (users.get(caller)) {
+      case (?user) {
+        // Generate verification hash using the verification module
+        let verificationHash = Verification.generateHash(name, description, ipfsUrl);
+        let metadataHash = Verification.generateMetadataHash(metadata);
+        
+        let newArtifact : Artifact = {
+          id = nextArtifactId;
+          owner = caller;
+          name = name;
+          description = description;
+          artifactType = artifactType;
+          ipfsUrl = ipfsUrl;
+          verificationHash = verificationHash;
+          metadataHash = metadataHash;
+          isVerified = false;
+          metadata = metadata;
+          mintedAsNFT = false;
+          tokenId = null;
+          createdAt = Time.now();
+          verifiedAt = null;
+        };
+        
+        artifacts.put(nextArtifactId, newArtifact);
+        
+        // Update user's artifacts
+        let updatedArtifacts = Array.append<Nat>([nextArtifactId], user.artifacts);
+        let updatedUser : User = {
+          id = user.id;
+          principal = user.principal;
+          username = user.username;
+          email = user.email;
+          artifacts = updatedArtifacts;
+          hasSubscription = user.hasSubscription;
+          subscriptionExpiry = user.subscriptionExpiry;
+          createdAt = user.createdAt;
+        };
+        
+        users.put(caller, updatedUser);
+        
+        nextArtifactId += 1;
+        stats.totalArtifacts += 1;
+        
+        #ok(newArtifact);
+      };
+      case (null) {
+        #err("User not found. Please create an account first.");
+      };
+    };
+  };
+  
+  // Get all artifacts
+  public query func getAllArtifacts() : async [Artifact] {
+    Iter.toArray(artifacts.vals());
+  };
+  
+  // Get a specific artifact
+  public query func getArtifact(id : Nat) : async ?Artifact {
+    artifacts.get(id);
+  };
+  
+  // Get artifacts owned by the current user
+  public shared(msg) func getMyArtifacts() : async [Artifact] {
+    let caller = msg.caller;
+    
+    switch (users.get(caller)) {
+      case (?user) {
+        let userArtifacts = Buffer.Buffer<Artifact>(user.artifacts.size());
+        
+        for (artifactId in user.artifacts.vals()) {
+          switch (artifacts.get(artifactId)) {
+            case (?artifact) {
+              userArtifacts.add(artifact);
+            };
+            case (null) {};
           };
         };
         
-        // Create NFT token for the verified artifact
-        let tokenId = await Token.mintNFT(msg.caller, artifact.id, artifact.name, artifact.imageUrl);
-        
-        // Update artifact with verification status and token
-        let updatedArtifact : Artifact = {
-          id = artifact.id;
-          name = artifact.name;
-          description = artifact.description;
-          origin = artifact.origin;
-          creatorId = artifact.creatorId;
-          creatorPrincipal = artifact.creatorPrincipal;
-          artifactType = artifact.artifactType;
-          imageUrl = artifact.imageUrl;
-          verified = true;
-          tokenId = ?tokenId;
-          verificationHash = artifact.verificationHash;
-          metadataHash = artifact.metadataHash;
-          createdAt = artifact.createdAt;
-        };
-        
-        artifacts.put(id, updatedArtifact);
-        
-        return {
-          success = true;
-          message = "Artifact successfully verified and NFT minted";
-          artifact = ?updatedArtifact;
-        };
+        Buffer.toArray(userArtifacts);
+      };
+      case (null) {
+        [];
       };
     };
   };
   
-  // Admin functions
-  public shared(msg) func clearAll() : async () {
-    // Only allow this in development environments
-    assert(Principal.isAnonymous(msg.caller) == false);
+  // Verify an artifact
+  public shared(msg) func verifyArtifact(id : Nat) : async Result.Result<Artifact, Text> {
+    let caller = msg.caller;
     
-    artifacts.clear();
-    users.clear();
-    nextArtifactId := 1;
-    nextUserId := 1;
+    switch (artifacts.get(id)) {
+      case (?artifact) {
+        // In a real-world scenario, we would perform actual verification here
+        // For demo purposes, we'll just mark it as verified
+        
+        let updatedArtifact : Artifact = {
+          id = artifact.id;
+          owner = artifact.owner;
+          name = artifact.name;
+          description = artifact.description;
+          artifactType = artifact.artifactType;
+          ipfsUrl = artifact.ipfsUrl;
+          verificationHash = artifact.verificationHash;
+          metadataHash = artifact.metadataHash;
+          isVerified = true;
+          metadata = artifact.metadata;
+          mintedAsNFT = artifact.mintedAsNFT;
+          tokenId = artifact.tokenId;
+          createdAt = artifact.createdAt;
+          verifiedAt = ?Time.now();
+        };
+        
+        artifacts.put(id, updatedArtifact);
+        stats.verifiedArtifacts += 1;
+        
+        #ok(updatedArtifact);
+      };
+      case (null) {
+        #err("Artifact not found");
+      };
+    };
   };
-}
+  
+  // ========== NFT FUNCTIONALITY ==========
+  
+  // Mint an artifact as NFT
+  public shared(msg) func mintNFT(artifactId : Nat) : async Result.Result<Nat, Text> {
+    let caller = msg.caller;
+    
+    switch (artifacts.get(artifactId)) {
+      case (?artifact) {
+        if (artifact.owner != caller) {
+          return #err("You don't own this artifact");
+        };
+        
+        if (artifact.mintedAsNFT) {
+          return #err("This artifact is already minted as NFT");
+        };
+        
+        if (not artifact.isVerified) {
+          return #err("Artifact must be verified before minting");
+        };
+        
+        // Prepare NFT metadata
+        let nftMetadata : NFTMetadata = {
+          name = artifact.name;
+          description = artifact.description;
+          artifactType = artifact.artifactType;
+          ipfsUrl = artifact.ipfsUrl;
+          verificationHash = artifact.verificationHash;
+          metadataHash = artifact.metadataHash;
+          originalArtifactId = artifactId;
+          createdAt = Time.now();
+        };
+        
+        // Mint NFT
+        let tokenId = Token.mint(tokens, caller, nftMetadata);
+        
+        // Update artifact
+        let updatedArtifact : Artifact = {
+          id = artifact.id;
+          owner = artifact.owner;
+          name = artifact.name;
+          description = artifact.description;
+          artifactType = artifact.artifactType;
+          ipfsUrl = artifact.ipfsUrl;
+          verificationHash = artifact.verificationHash;
+          metadataHash = artifact.metadataHash;
+          isVerified = artifact.isVerified;
+          metadata = artifact.metadata;
+          mintedAsNFT = true;
+          tokenId = ?tokenId;
+          createdAt = artifact.createdAt;
+          verifiedAt = artifact.verifiedAt;
+        };
+        
+        artifacts.put(artifactId, updatedArtifact);
+        
+        #ok(tokenId);
+      };
+      case (null) {
+        #err("Artifact not found");
+      };
+    };
+  };
+  
+  // Get NFT tokens owned by the current user
+  public shared(msg) func getUserTokens() : async [Token.NFT] {
+    let caller = msg.caller;
+    Token.getTokensByOwner(tokens, caller);
+  };
+  
+  // Transfer NFT to another user
+  public shared(msg) func transferNFT(tokenId : Nat, to : Principal) : async Result.Result<(), Text> {
+    let caller = msg.caller;
+    Token.transfer(tokens, caller, to, tokenId);
+  };
+  
+  // ========== SUBSCRIPTION MANAGEMENT ==========
+  
+  // Create a subscription
+  public shared(msg) func createSubscription(planId : Text) : async Result.Result<Subscription, Text> {
+    let caller = msg.caller;
+    
+    switch (users.get(caller)) {
+      case (?user) {
+        // Determine subscription duration based on plan
+        let durationNanos = switch (planId) {
+          case ("monthly") 30 * 24 * 60 * 60 * 1000000000; // 30 days in nanoseconds
+          case ("yearly") 365 * 24 * 60 * 60 * 1000000000; // 365 days in nanoseconds
+          case (_) return #err("Invalid subscription plan");
+        };
+        
+        let now = Time.now();
+        let expiry = now + durationNanos;
+        
+        let newSubscription : Subscription = {
+          id = nextSubscriptionId;
+          userId = user.id;
+          userPrincipal = caller;
+          planId = planId;
+          startDate = now;
+          expiryDate = expiry;
+          isActive = true;
+          createdAt = now;
+        };
+        
+        subscriptions.put(caller, newSubscription);
+        
+        // Update user
