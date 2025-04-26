@@ -1,0 +1,73 @@
+/* Custom animations for loading screens */
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes reverse-spin {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes float-slow {
+  0% {
+    transform: perspective(1000px) rotateX(10deg) rotateY(45deg) translateY(0px);
+  }
+  50% {
+    transform: perspective(1000px) rotateX(15deg) rotateY(35deg) translateY(-10px);
+  }
+  100% {
+    transform: perspective(1000px) rotateX(10deg) rotateY(45deg) translateY(0px);
+  }
+}
+
+@keyframes float-particle {
+  0% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-15px) scale(1.5);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-30px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+.animate-reverse-spin {
+  animation: reverse-spin 7s linear infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+.animate-float-particle {
+  animation: float-particle 4s ease-out infinite;
+}
