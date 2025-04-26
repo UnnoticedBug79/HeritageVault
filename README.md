@@ -66,15 +66,16 @@ HeritageVault adalah platform Web3 cutting-edge yang menggabungkan teknologi blo
 ### Langkah Instalasi
 
 1. Clone repository
-   ```bash
+   
+       ```bash
    git clone https://github.com/Alufeed12/heritage-vault.git
    cd heritage-vault
 
    Instal dependensi
 2.Instal dependensi
     
-    '''bash
-     npm install
+       '''bash
+       npm install
 
 3. Jalankan aplikasi di lingkungan pengembangan
 
