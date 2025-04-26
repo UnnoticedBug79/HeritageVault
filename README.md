@@ -67,24 +67,24 @@ HeritageVault adalah platform Web3 cutting-edge yang menggabungkan teknologi blo
 
 1. Clone repository
    
-       ```bash
+       ```
    git clone https://github.com/Alufeed12/heritage-vault.git
    cd heritage-vault
 
    Instal dependensi
 2.Instal dependensi
     
-       '''bash
+       '''
        npm install
 
 3. Jalankan aplikasi di lingkungan pengembangan
 
-       '''bash
+       '''
        npm run dev
 
 4. Deploy ke ICP
    
-       '''bash
+       '''
        dfx deploy
 
  🔮 Penggunaan
@@ -138,17 +138,17 @@ Untuk mengujicoba fungsi Internet Computer Protocol (ICP) dalam aplikasi:
 Persiapan Lingkungan ICP
 1. Pastikan DFX CLI terinstal
    
-       '''bash
+       '''
        sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
 
  2.Mulai replica ICP lokal
 
-    '''bash
+    '''
     dfx start --background
 
  3.Deploy canister ke replica lokal
       
-      ''''bash
+      ''''
       dfx deploy
 
 
