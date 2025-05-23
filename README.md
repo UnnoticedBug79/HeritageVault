@@ -152,7 +152,8 @@ Persiapan Lingkungan ICP
       dfx deploy
 
 
-Tim :Neonloom 
+Tim : UnnoticedBug79
 - Hari Hardiyan
-- Rafael Akhmad Ramdani
-- Indra Gunawan 
+- M Raffi Firdaus
+- M Akbar
+
